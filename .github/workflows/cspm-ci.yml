@@ -55,13 +55,21 @@ jobs:
         run: |
           python3 scanner_main.py
 
-      # Step 7: Send full report to Telegram & fail on any finding
       - name: Send Full CSPM Report & Fail on Any Findings
+        working-directory: ${{ github.workspace }}  # set working dir to repo root
         run: |
+          report_file="scanner/reports/cspm_report.json"
+
+          # Check if the report exists
+          if [ ! -f "$report_file" ]; then
+            echo "❌ Report file $report_file not found!"
+            exit 2
+          fi
+
           # Convert JSON report into readable text
-          report=$(jq -r '.findings[] | "\(.resource) (\(.service)) → \(.severity): \(.issue)"' ../reports/cspm_report.json)
-          total=$(jq -r '.total_findings' ../reports/cspm_report.json)
-          scan_time=$(jq -r '.scan_time' ../reports/cspm_report.json)
+          report=$(jq -r '.findings[] | "\(.resource) (\(.service)) → \(.severity): \(.issue)"' "$report_file")
+          total=$(jq -r '.total_findings' "$report_file")
+          scan_time=$(jq -r '.scan_time' "$report_file")
 
           message="📊 CSPM Scan Report\nTime: $scan_time\nTotal Findings: $total\n\n$report"
 
